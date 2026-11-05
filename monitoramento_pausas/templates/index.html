@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Pausas e Ligações</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 28px;
+            background: #101827;
+            color: #f1f5f9;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 { margin-top: 0; }
+
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 16px;
+        }
+
+        .subtitulo, .detalhe {
+            color: #94a3b8;
+        }
+
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .status {
+            background: #1e293b;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: #cbd5e1;
+        }
+
+        .acoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        button {
+            border: 0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .botao-teste {
+            background: #2563eb;
+            color: white;
+        }
+
+        .botao-parar {
+            background: #334155;
+            color: white;
+        }
+
+        .aviso {
+            margin: 12px 0;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .grade {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 18px;
+        }
+
+        .cartao {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 20px;
+            min-width: 0;
+        }
+
+        .cartao.excedido {
+            border-color: #ef4444;
+        }
+
+        .nome {
+            font-size: 18px;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .detalhe {
+            margin-top: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .tempo {
+            margin-top: 20px;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .relogio {
+            color: #94a3b8;
+            margin-right: 8px;
+        }
+
+        .relogio.excedido {
+            color: #ef4444;
+        }
+
+        .limite {
+            margin-top: 10px;
+            color: #cbd5e1;
+        }
+
+        .sem-dados {
+            color: #94a3b8;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 12px;
+        }
+
+        .status-ligacao {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 9px;
+            border-radius: 7px;
+            background: #334155;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-ligacao.ativa {
+            background: #14532d;
+            color: #bbf7d0;
+        }
+
+        .status-ligacao.excedida {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+
+        .filas {
+            margin-top: 12px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topo">
+        <div>
+            <h1>Monitoramento</h1>
+            <div class="subtitulo">Pausas e ligações dos operadores</div>
+        </div>
+
+        <div class="status">
+            Atualizado às <span id="atualizado">--:--:--</span>
+        </div>
+    </div>
+
+    <div class="acoes">
+        <button class="botao-teste" onclick="simularExcesso()">
+            Simular pausas excedidas
+        </button>
+
+        <button class="botao-parar" onclick="encerrarTeste()">
+            Encerrar teste
+        </button>
+    </div>
+
+    <div id="aviso" class="aviso">Carregando dados...</div>
+
+    <h2>Monitoramento de Pausas</h2>
+    <div id="operadores" class="grade"></div>
+
+    <h2>Monitoramento de Ligações</h2>
+    <div id="ligacoes" class="grade"></div>
+
+    <script>
+        function criarElemento(tag, classe, texto) {
+            const elemento = document.createElement(tag);
+
+            if (classe) {
+                elemento.className = classe;
+            }
+
+            if (texto !== undefined) {
+                elemento.textContent = texto;
+            }
+
+            return elemento;
+        }
+
+        function mostrarPausas(operadores) {
+            const grade = document.getElementById("operadores");
+            grade.replaceChildren();
+
+            if (!operadores.length) {
+                grade.appendChild(
+                    criarElemento("div", "sem-dados",
+                        "Nenhum operador em pausa no momento.")
+                );
+                return;
+            }
+
+            operadores.forEach(op => {
+                const cartao = criarElemento(
+                    "div",
+                    "cartao" + (op.excedido ? " excedido" : "")
+                );
+
+                cartao.appendChild(criarElemento("div", "nome", op.nome));
+                cartao.appendChild(criarElemento(
+                    "div", "detalhe", "Ramal: " + op.ramal
+                ));
+
+                const tempo = criarElemento("div", "tempo");
+                tempo.appendChild(criarElemento(
+                    "span",
+                    "relogio" + (op.excedido ? " excedido" : ""),
+                    "◷"
+                ));
+                tempo.appendChild(criarElemento(
+                    "span", "valor-tempo", op.tempo_atual
+                ));
+
+                cartao.appendChild(tempo);
+                cartao.appendChild(criarElemento(
+                    "div", "limite",
+                    "Limite: " + op.limite_minutos + " minutos"
+                ));
+                cartao.appendChild(criarElemento(
+                    "div", "detalhe",
+                    op.excedido ? "PAUSA EXCEDIDA" : "Dentro do limite"
+                ));
+
+                grade.appendChild(cartao);
+            });
+        }
+
+        
+function mostrarLigacoes(ligacoes) {
+    const grade = document.getElementById("ligacoes");
+    grade.replaceChildren();
+
+    if (!ligacoes.length) {
+        grade.appendChild(
+            criarElemento("div", "sem-dados",
+                "Nenhum operador em ligação no momento.")
+        );
+        return;
+    }
+
+    ligacoes.forEach(ligacao => {
+        const cartao = criarElemento("div", "cartao");
+
+        cartao.appendChild(criarElemento(
+            "div", "nome",
+            ligacao.operador || ligacao.nome || "Operador não identificado"
+        ));
+
+        cartao.appendChild(criarElemento(
+            "div", "detalhe",
+            "Ramal: " + (ligacao.ramal || "Não informado")
+        ));
+
+        cartao.appendChild(criarElemento(
+            "div",
+            "status-ligacao ativa",
+            ligacao.estado || "EM LIGAÇÃO"
+        ));
+
+        grade.appendChild(cartao);
+    });
+}
+
+
+        async function carregarDados() {
+            try {
+                const resposta = await fetch("/api/dados");
+                const dados = await resposta.json();
+
+                document.getElementById("atualizado").textContent =
+                    dados.atualizado_em || "--:--:--";
+
+                document.getElementById("aviso").textContent =
+                    dados.erro
+                        ? "Erro na coleta: " + dados.erro
+                        : dados.modo === "teste"
+                            ? "Modo de demonstração de pausas."
+                            : "Monitoramento atualizado automaticamente.";
+
+                mostrarPausas(dados.operadores || []);
+                mostrarLigacoes(dados.ligacoes || []);
+
+                if (!dados.teams_configurado) {
+                    document.getElementById("aviso").textContent +=
+                        " O webhook do Teams não está configurado.";
+                }
+            } catch (erro) {
+                document.getElementById("aviso").textContent =
+                    "Não foi possível carregar os dados. Verifique se o Flask está rodando.";
+            }
+        }
+
+        async function simularExcesso() {
+            try {
+                const resposta = await fetch("/api/teste-alerta", {
+                    method: "POST"
+                });
+
+                const dados = await resposta.json();
+
+                document.getElementById("aviso").textContent =
+                    dados.mensagem + " Confira o terminal e o Teams.";
+
+                await carregarDados();
+            } catch (erro) {
+                document.getElementById("aviso").textContent =
+                    "Não foi possível executar o teste.";
+            }
+        }
+
+        async function encerrarTeste() {
+            await fetch("/api/encerrar-teste", { method: "POST" });
+
+            document.getElementById("aviso").textContent =
+                "Modo de teste de pausas encerrado.";
+
+            await carregarDados();
+        }
+
+        carregarDados();
+        setInterval(carregarDados, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #101827;
+    color: #f1f5f9;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+header h1 {
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #aab6c8;
+}
+
+.card {
+    background: #1b2638;
+    padding: 24px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid #344258;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin-top: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 14px;
+    border-bottom: 1px solid #344258;
+}
+
+th {
+    color: #b8c6d9;
+}
+
+.excedida {
+    background: #491d26;
+    color: #ffb8c0;
+}
+
+@media (max-width: 650px) {
+    .container {
+        padding: 12px;
+    }
+
+    .card {
+        padding: 14px;
+        overflow-x: auto;
+    }
+
+    th, td {
+        padding: 10px;
+    }
+}
